@@ -1,0 +1,17 @@
+[33mcommit b18641de286161b8dfb82bdc5f305ca242439cb8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: saijaswanth664 <saijaswant2518@gmail.com>
+Date:   Fri Jul 17 23:21:33 2026 +0530
+
+    feat: production-ready diabetes monitoring system - Fix Vite 8 es-toolkit/compat CJS-to-ESM bundler collision (require_identity crash) - Fix dynamic PDF report generation and SMTP email dispatch - Add interactive notifications dropdown in Navbar - Add liquid glass light/dark mode UI polish - Add Vercel SPA routing config (vercel.json) - Add .gitignore to exclude secrets, __pycache__, .db, node_modules - Replace .env with .env.example (no credentials in repo)
+
+ firebase_service_account.json | 13 [31m-------------[m
+ 1 file changed, 13 deletions(-)
+
+[33mcommit f6371090aceb189c28fe9e78bcee11178c3bd480[m
+Author: saijaswanth664 <saijaswant2518@gmail.com>
+Date:   Sun May 31 22:42:52 2026 +0530
+
+    chore: commit pending changes before worktree operations
+
+ firebase_service_account.json | 13 [32m+++++++++++++[m
+ 1 file changed, 13 insertions(+)

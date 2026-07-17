@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Environment variables (contains secrets)
+.env
+
+# Database
+*.db
+
+# Generated reports
+reports_generated/
+
+# Node modules
+node_modules/
+package-lock.json
+/package.json
+
+# Frontend build output
+frontend/dist/
+frontend/node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Firebase service account (sensitive)
+firebase_service_account.json
