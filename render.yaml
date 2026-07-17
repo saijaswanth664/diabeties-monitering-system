@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: diabetes-monitoring-backend
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+      - key: SECRET_KEY
+        sync: false         # Set this in Render dashboard
+      - key: DATABASE_URL
+        sync: false         # Set this in Render dashboard
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "30"
+    healthCheckPath: /docs
+    autoDeploy: true
