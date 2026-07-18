@@ -1,3 +1,13 @@
+---
+title: Diabetes Monitoring Backend
+emoji: 🩺
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Secure AI-Based Personalized Diabetes Monitoring & Analytics System
 
 A production-ready, clinical-grade backend system built with **FastAPI**, **SQLAlchemy ORM**, **Scikit-learn**, and local **Explainable AI (SHAP & LIME)** models. It provides medical professionals and patients with secure logins, email-verified OTP enrollments, automated biomarker classification, historical metabolic comparisons, rules-engine recommendations, and beautifully compiled ReportLab PDF charts emailed automatically.
