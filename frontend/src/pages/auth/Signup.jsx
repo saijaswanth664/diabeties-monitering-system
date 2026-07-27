@@ -11,6 +11,7 @@ const Signup = () => {
   const [gmail, setGmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [smtpFallbackOtp, setSmtpFallbackOtp] = useState(null);
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -33,11 +34,23 @@ const Signup = () => {
         gmail: gmail,
         password: password
       });
-      toast.success(response.data.message || 'OTP issued for Gmail verification.', 'Account Enrolled');
-      // Redirect to OTP Verification screen
-      navigate('/verify-otp', { state: { gmail } });
+
+      // Check if SMTP failed and OTP was returned as fallback
+      if (response.data.smtp_warning && response.data.otp_fallback) {
+        setSmtpFallbackOtp(response.data.otp_fallback);
+        toast.warning('Email delivery failed. Your OTP code is shown below — copy it before proceeding.', 'SMTP Not Configured');
+      } else {
+        toast.success(response.data.message || 'OTP issued for Gmail verification.', 'Account Enrolled');
+      }
+
+      // Redirect to OTP Verification screen after a brief delay if SMTP failed
+      if (!response.data.smtp_warning) {
+        navigate('/verify-otp', { state: { gmail } });
+      }
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || 'Account enrollment failed. This email may already be verified.';
+      const errorMsg = err.response?.data?.detail || err.code === 'ERR_NETWORK'
+        ? 'Backend server is starting up. Please wait 30 seconds and try again.'
+        : 'Account enrollment failed. This email may already be verified.';
       toast.error(errorMsg, 'Signup Failed');
     } finally {
       setLoading(false);
@@ -48,12 +61,28 @@ const Signup = () => {
     <div className="flex flex-col gap-6 select-none">
       <div className="flex flex-col gap-1 text-center">
         <h2 className="text-2xl font-black bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent tracking-tight">
-          Practioner Enrollment
+          Practitioner Enrollment
         </h2>
         <p className="text-xs text-slate-500 font-semibold">
           Create an encrypted account to manage diagnostics.
         </p>
       </div>
+
+      {/* SMTP Fallback OTP Display */}
+      {smtpFallbackOtp && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-center">
+          <p className="text-[10px] text-amber-400 font-bold mb-2">⚠️ EMAIL NOT SENT — COPY THIS OTP:</p>
+          <div className="text-2xl font-black text-amber-300 tracking-[6px] font-mono">{smtpFallbackOtp}</div>
+          <button
+            onClick={() => {
+              navigate('/verify-otp', { state: { gmail } });
+            }}
+            className="mt-3 text-[10px] font-bold text-cyan-400 hover:text-cyan-300 underline transition-colors"
+          >
+            I copied it → Go to Verification
+          </button>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-1.5">
         <FormField

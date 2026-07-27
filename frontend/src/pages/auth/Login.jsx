@@ -33,12 +33,15 @@ const Login = () => {
       toast.success(`Welcome back, ${response.data.full_name}!`, 'Authorization Succeeded');
       navigate('/dashboard');
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || 'Incorrect password or unverified account. Please try again.';
-      toast.error(errorMsg, 'Login Failed');
-      
-      // If user is unverified, redirect to OTP verification screen
-      if (err.response?.status === 403) {
+      // Differentiate between network errors and auth errors
+      if (!err.response || err.code === 'ERR_NETWORK') {
+        toast.error('Backend server is waking up. Please wait 30-60 seconds and try again.', 'Server Starting');
+      } else if (err.response?.status === 403) {
+        toast.error('Account unverified. Redirecting to OTP verification...', 'Verification Required');
         navigate('/verify-otp', { state: { gmail } });
+      } else {
+        const errorMsg = err.response?.data?.detail || 'Incorrect password or unverified account. Please try again.';
+        toast.error(errorMsg, 'Login Failed');
       }
     } finally {
       setLoading(false);

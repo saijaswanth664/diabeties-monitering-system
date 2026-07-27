@@ -70,10 +70,10 @@ const OTPVerify = () => {
     <div className="flex flex-col gap-6 select-none">
       <div className="flex flex-col gap-1 text-center">
         <h2 className="text-2xl font-black bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent tracking-tight">
-          Verify Verification Code
+          Verify Your Email
         </h2>
         <p className="text-xs text-slate-500 font-semibold">
-          Enter the 6-digit activation code dispatched to your Gmail.
+          Enter the 6-digit OTP code sent to your Gmail.
         </p>
       </div>
 

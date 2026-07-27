@@ -71,9 +71,17 @@ def signup(data: UserSignupSchema, db: Session = Depends(get_db)):
     # Generate and send OTP
     otp = generate_otp()
     save_otp(db, data.gmail, otp)
-    send_otp_email(data.gmail, otp)
+    email_sent = send_otp_email(data.gmail, otp)
 
-    return {"message": "Registration successful. A 6-digit OTP has been sent to your Gmail."}
+    if email_sent:
+        return {"message": "Registration successful. A 6-digit OTP has been sent to your Gmail."}
+    else:
+        # SMTP not configured or failed — return OTP in response for testing/demo
+        return {
+            "message": "Registration successful. Email delivery failed (SMTP not configured). Use the OTP below to verify.",
+            "otp_fallback": otp,
+            "smtp_warning": True
+        }
 
 @router.post("/send-otp")
 def send_otp(data: ForgotPasswordSchema, db: Session = Depends(get_db)):
@@ -162,9 +170,16 @@ def forgot_password(data: ForgotPasswordSchema, db: Session = Depends(get_db)):
         
     otp = generate_otp()
     save_otp(db, data.gmail, otp)
-    send_otp_email(data.gmail, otp, OTPEmailType.PASSWORD_RESET)
+    email_sent = send_otp_email(data.gmail, otp, OTPEmailType.PASSWORD_RESET)
     
-    return {"message": "Verification code sent. Use it to reset your password."}
+    if email_sent:
+        return {"message": "Verification code sent. Use it to reset your password."}
+    else:
+        return {
+            "message": "Email delivery failed (SMTP not configured). Use the OTP below to reset your password.",
+            "otp_fallback": otp,
+            "smtp_warning": True
+        }
 
 @router.post("/reset-password")
 def reset_password(data: ResetPasswordSchema, db: Session = Depends(get_db)):
