@@ -44,24 +44,25 @@ def signup(data: UserSignupSchema, db: Session = Depends(get_db)):
     Fails if the email is already registered and verified.
     Otherwise, issues a 6-digit OTP for email verification.
     """
-    existing_user = db.query(User).filter(User.gmail == data.gmail).first()
+    email_clean = data.gmail.strip().lower()
+    existing_user = db.query(User).filter(User.gmail == email_clean).first()
     
     if existing_user:
         if existing_user.verified:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email is already registered and verified."
+                detail="Email is already registered and verified. Please sign in instead."
             )
         else:
             # Update credentials for existing unverified user
-            existing_user.full_name = data.full_name
+            existing_user.full_name = data.full_name.strip()
             existing_user.password_hash = get_password_hash(data.password)
             db.commit()
     else:
         # Create unverified user
         new_user = User(
-            full_name=data.full_name,
-            gmail=data.gmail,
+            full_name=data.full_name.strip(),
+            gmail=email_clean,
             password_hash=get_password_hash(data.password),
             verified=False
         )
@@ -70,8 +71,8 @@ def signup(data: UserSignupSchema, db: Session = Depends(get_db)):
 
     # Generate and send OTP
     otp = generate_otp()
-    save_otp(db, data.gmail, otp)
-    email_sent = send_otp_email(data.gmail, otp)
+    save_otp(db, email_clean, otp)
+    email_sent = send_otp_email(email_clean, otp)
 
     if email_sent:
         return {"message": "Registration successful. A 6-digit OTP has been sent to your Gmail."}
@@ -88,9 +89,10 @@ def send_otp(data: ForgotPasswordSchema, db: Session = Depends(get_db)):
     """
     Generates and sends a new 6-digit OTP to the requested email.
     """
+    email_clean = data.gmail.strip().lower()
     otp = generate_otp()
-    save_otp(db, data.gmail, otp)
-    sent = send_otp_email(data.gmail, otp)
+    save_otp(db, email_clean, otp)
+    sent = send_otp_email(email_clean, otp)
     if not sent:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -104,8 +106,9 @@ def verify_user_otp(data: OTPVerifySchema, db: Session = Depends(get_db)):
     Validates the 6-digit OTP.
     If valid and unexpired, activates/verifies the user account.
     """
+    email_clean = data.gmail.strip().lower()
     # Verify OTP
-    is_valid = verify_otp(db, data.gmail, data.otp)
+    is_valid = verify_otp(db, email_clean, data.otp)
     if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -113,7 +116,7 @@ def verify_user_otp(data: OTPVerifySchema, db: Session = Depends(get_db)):
         )
 
     # Mark user as verified
-    user = db.query(User).filter(User.gmail == data.gmail).first()
+    user = db.query(User).filter(User.gmail == email_clean).first()
     if user:
         user.verified = True
         db.commit()
@@ -130,7 +133,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     Authenticates email and password. Returns a secure JWT access token.
     FastAPI OAuth2PasswordRequestForm expects username (our gmail) and password.
     """
-    user = db.query(User).filter(User.gmail == form_data.username).first()
+    email_clean = form_data.username.strip().lower()
+    user = db.query(User).filter(User.gmail == email_clean).first()
     
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
@@ -161,7 +165,8 @@ def forgot_password(data: ForgotPasswordSchema, db: Session = Depends(get_db)):
     Initiates password recovery.
     Verifies user existence and dispatches a reset OTP code.
     """
-    user = db.query(User).filter(User.gmail == data.gmail).first()
+    email_clean = data.gmail.strip().lower()
+    user = db.query(User).filter(User.gmail == email_clean).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -169,8 +174,8 @@ def forgot_password(data: ForgotPasswordSchema, db: Session = Depends(get_db)):
         )
         
     otp = generate_otp()
-    save_otp(db, data.gmail, otp)
-    email_sent = send_otp_email(data.gmail, otp, OTPEmailType.PASSWORD_RESET)
+    save_otp(db, email_clean, otp)
+    email_sent = send_otp_email(email_clean, otp, OTPEmailType.PASSWORD_RESET)
     
     if email_sent:
         return {"message": "Verification code sent. Use it to reset your password."}
@@ -186,14 +191,15 @@ def reset_password(data: ResetPasswordSchema, db: Session = Depends(get_db)):
     """
     Resets the user's password if the reset OTP code matches and is valid.
     """
-    is_valid = verify_otp(db, data.gmail, data.otp)
+    email_clean = data.gmail.strip().lower()
+    is_valid = verify_otp(db, email_clean, data.otp)
     if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired verification code."
         )
         
-    user = db.query(User).filter(User.gmail == data.gmail).first()
+    user = db.query(User).filter(User.gmail == email_clean).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
