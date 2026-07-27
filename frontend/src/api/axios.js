@@ -3,7 +3,7 @@ import axios from 'axios';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
   (typeof window !== 'undefined' && (window.location.port === '5173' || window.location.hostname === 'localhost') 
     ? 'http://127.0.0.1:8000' 
-    : 'https://diabeties-monitering-system.onrender.com');
+    : '');
 
 // Global switch to force mock data or let it auto-detect connection errors
 export const MOCK_MODE = {
