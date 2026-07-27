@@ -21,10 +21,8 @@ reports_generated/
 node_modules/
 frontend/node_modules/
 
-# Frontend build output (included for instant single-port hosting)
-# frontend/dist/
-
-# Lock files (optional, keep for reproducibility)
+# Frontend build output
+# Removed frontend/dist/ so it can be committed for Render deployment
 # package-lock.json
 
 # IDE / Editor
