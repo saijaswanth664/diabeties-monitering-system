@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
     SENDER_NAME: str = "Diabetes Analytics System"
+    RESEND_API_KEY: str = ""
 
     # SettingsConfigDict tells Pydantic to read from a .env file if available
     model_config = SettingsConfigDict(

@@ -69,32 +69,50 @@ class EmailService:
             """
             msg.attach(MIMEText(html_body, "html"))
 
-            # Attach PDF report
-            with open(pdf_path, "rb") as attachment:
-                part = MIMEBase("application", "octet-stream")
-                part.set_payload(attachment.read())
+            # Read and encode PDF attachment for Resend
+            import base64
+            with open(pdf_path, "rb") as f:
+                pdf_content = base64.b64encode(f.read()).decode("utf-8")
                 
-            encoders.encode_base64(part)
-            part.add_header(
-                "Content-Disposition",
-                f"attachment; filename= {os.path.basename(pdf_path)}",
-            )
-            msg.attach(part)
-
-            # Transmit email
-            logger.info("Connecting to SMTP server")
-            server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10)
-            server.starttls()
-            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            logger.info("Connected to SMTP server")
-            server.sendmail(settings.SMTP_USER, recipient_gmail, msg.as_string())
-            server.quit()
+            logger.info("Sending PDF Report via Resend API")
             
-            logger.info("PDF report emailed successfully")
-            print(f"[+] PDF report email dispatched successfully to {recipient_gmail}")
-            return True
+            if not settings.RESEND_API_KEY:
+                print(f"[ERROR] Failed to email PDF report to {recipient_gmail}: RESEND_API_KEY missing")
+                return False
+                
+            import requests
+            
+            payload = {
+                "from": f"{settings.SENDER_NAME} <onboarding@resend.dev>",
+                "to": [recipient_gmail],
+                "subject": f"Your Diabetes Clinical Analytics Report - {datetime.now().strftime('%B %Y')}",
+                "html": html_body,
+                "attachments": [
+                    {
+                        "filename": os.path.basename(pdf_path),
+                        "content": pdf_content
+                    }
+                ]
+            }
+            
+            headers = {
+                "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            
+            response = requests.post("https://api.resend.com/emails", json=payload, headers=headers)
+            
+            if response.status_code in [200, 201]:
+                logger.info("PDF report emailed successfully")
+                print(f"[+] PDF report email dispatched successfully to {recipient_gmail}")
+                return True
+            else:
+                logger.error(f"Resend API Error: {response.text}")
+                print(f"[ERROR] Failed to email PDF report to {recipient_gmail}: {response.text}")
+                return False
+                
         except Exception as e:
-            logger.error("Full SMTP exception traceback", exc_info=True)
+            logger.error("Full Resend exception traceback", exc_info=True)
             print(f"[ERROR] Failed to email PDF report to {recipient_gmail}: {str(e)}")
             return False
 

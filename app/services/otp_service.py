@@ -76,21 +76,41 @@ def send_otp_email(gmail: str, otp: str, email_type: OTPEmailType = OTPEmailType
         """
         msg.attach(MIMEText(html_body, "html"))
 
-        logger.info("Connecting to SMTP server")
-        server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10)
-        server.starttls()
-        server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-        logger.info("Connected to SMTP server")
-        server.sendmail(settings.SMTP_USER, gmail, msg.as_string())
-        server.quit()
+        # Use Resend API instead of SMTP
+        logger.info("Sending OTP via Resend API")
+        
+        if not settings.RESEND_API_KEY:
+            logger.warning("RESEND_API_KEY is missing. Using fallback OTP.")
+            return False
 
-        if email_type == OTPEmailType.VERIFICATION:
-            logger.info("Verification OTP sent successfully")
+        import requests
+        
+        payload = {
+            "from": f"{settings.SENDER_NAME} <onboarding@resend.dev>",
+            "to": [gmail],
+            "subject": subject,
+            "html": html_body
+        }
+        
+        headers = {
+            "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        
+        response = requests.post("https://api.resend.com/emails", json=payload, headers=headers)
+        
+        if response.status_code in [200, 201]:
+            if email_type == OTPEmailType.VERIFICATION:
+                logger.info("Verification OTP sent successfully via Resend")
+            else:
+                logger.info("Password Reset OTP sent successfully via Resend")
+            return True
         else:
-            logger.info("Password Reset OTP sent successfully")
-        return True
+            logger.error(f"Resend API Error: {response.text}")
+            return False
+            
     except Exception as e:
-        logger.error("Full SMTP exception traceback", exc_info=True)
+        logger.error("Full Resend exception traceback", exc_info=True)
         logger.warning(f"[TEST FALLBACK] OTP for {gmail} is {otp}")
         return False
 
