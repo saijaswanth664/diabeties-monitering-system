@@ -69,9 +69,22 @@ async def serve_spa(request: Request, catchall: str):
     # Don't catch API routes or docs
     if catchall.startswith("api/") or catchall in ("docs", "redoc", "openapi.json"):
         return None
+        
+    # If the browser is asking for a specific JS/CSS asset that doesn't exist, return 404!
+    # Do NOT return index.html, otherwise the browser tries to execute HTML as JavaScript.
+    if catchall.startswith("assets/") or catchall.endswith((".js", ".css", ".map", ".png", ".svg")):
+        from fastapi import Response
+        return Response(status_code=404, content="Asset not found")
+
     index_path = os.path.join(FRONTEND_DIR, "index.html")
     if os.path.exists(index_path):
-        return FileResponse(index_path, media_type="text/html")
+        # Disable caching on index.html so Render's CDN always fetches the latest version
+        response = FileResponse(index_path, media_type="text/html")
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
+        
     # Fallback if frontend hasn't been built yet
     from fastapi.responses import HTMLResponse
     return HTMLResponse(
